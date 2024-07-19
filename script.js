@@ -65,7 +65,6 @@ function handleRollNoFileUpload(event) {
         console.log("Student info loaded:", studentInfo);
         console.log("Total students:", totalStudents);
         
-        // Update the UI to reflect the correct number of students
         if (topicsData.length > 0) {
             generateNavigationPanel();
         }
@@ -83,7 +82,7 @@ function parseCSV(csv) {
             if (!topics[topicName]) {
                 topics[topicName] = { topicName, hard: {}, medium: {}, easy: {} };
             }
-            topics[topicName][difficulty === 'hard' ? 'hard' : difficulty === 'med' ? 'medium' : 'easy'] = {
+            topics[topicName][difficulty === 'hard' ? 'hard' : difficulty === 'medium' ? 'medium' : 'easy'] = {
                 count: parseInt(count),
                 questions: questionNumbers.map(Number)
             };
@@ -131,7 +130,6 @@ function handleCsvUpload() {
 function generateQuestionForms() {
     topicsData.forEach((topic, index) => {
         topic.topicName = document.getElementById(`topicName${index + 1}`).value;
-        // We don't need to update the count values here as they are now read-only
         
         if (!topic.hard.questions.length) topic.hard.questions = Array.from({length: topic.hard.count}, (_, i) => i + 1);
         if (!topic.medium.questions.length) topic.medium.questions = Array.from({length: topic.medium.count}, (_, i) => i + 1);
@@ -195,11 +193,8 @@ function loadTopic(student, topicIndex) {
 function askQuestionsForTopic(topicIndex) {
     const questionsContainer = document.getElementById('questionsContainer');
     questionsContainer.innerHTML = `<h2>${topicsData[topicIndex].topicName}</h2>`;
-    //const currentRollNo = studentRollNumbers[currentStudent - 1] || `Student ${currentStudent}`;
-    //document.getElementById('studentTitle').textContent = `${currentRollNo}: ${topicsData[topicIndex].topicName}`;
     const currentStudentData = studentInfo[currentStudent - 1];
     document.getElementById('studentTitle').textContent = `${currentStudentData.district} - ${currentStudentData.rollNo} - ${currentStudentData.candidateName}: ${topicsData[topicIndex].topicName}`;
-
 
     const topic = topicsData[topicIndex];
     ['hard', 'medium', 'easy'].forEach(difficulty => {
@@ -366,19 +361,37 @@ function downloadGraph(topicIndex) {
 
 function downloadCSV() {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Topic,Not Attended,Don't Understand the Question,Don't Understand Basic,Can't Apply,Numerical Error,Complete Error in Shading,Complete,Main Issue\n";
+    csvContent += "District,Roll No,Candidate Name,Topic,Not Attended,Don't Understand the Question,Don't Understand Basic,Can't Apply,Numerical Error,Complete Error in Shading,Complete,Main Issue\n";
 
     const categories = ["Not Attended", "Don't Understand the Question", "Don't Understand Basic", "Can't Apply", "Numerical Error", "Complete Error in Shading", "Complete"];
 
     studentInfo.forEach((student, studentIndex) => {
         topicsData.forEach(topic => {
             const counts = topic.responses[studentIndex];
-            const maxCount = Math.max(...categories.map(cat => counts[cat] || 0));
-            const mainIssue = categories.find(cat => counts[cat] === maxCount) || '';
+            const hardCounts = Object.values(counts.hard).reduce((acc, val) => {
+                acc[val] = (acc[val] || 0) + 1;
+                return acc;
+            }, {});
+            const mediumCounts = Object.values(counts.medium).reduce((acc, val) => {
+                acc[val] = (acc[val] || 0) + 1;
+                return acc;
+            }, {});
+            const easyCounts = Object.values(counts.easy).reduce((acc, val) => {
+                acc[val] = (acc[val] || 0) + 1;
+                return acc;
+            }, {});
+
+            const totalCounts = categories.reduce((acc, cat) => {
+                acc[cat] = (hardCounts[cat] || 0) + (mediumCounts[cat] || 0) + (easyCounts[cat] || 0);
+                return acc;
+            }, {});
+
+            const maxCount = Math.max(...Object.values(totalCounts));
+            const mainIssue = categories.find(cat => totalCounts[cat] === maxCount) || '';
 
             let row = `${student.district},${student.rollNo},${student.candidateName},${topic.topicName},`;
             categories.forEach(cat => {
-                row += `${counts[cat] || 0},`;
+                row += `${totalCounts[cat] || 0},`;
             });
             row += `${mainIssue}\n`;
 
