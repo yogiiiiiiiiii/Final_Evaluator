@@ -25,10 +25,10 @@ body {
   font-size: 24px;
 }
 
-  .layout-container {
+  .layout-container { /*main content canvas*/
     display: flex;
     min-height: calc(100vh - 70px); 
-    margin-top: 50px;
+    margin-top: 1px;
   }
   
   .main-content {
@@ -123,8 +123,7 @@ body {
     box-shadow: -2px 0 5px rgba(0,0,0,0.5);
     position: fixed;
     right: 0;
-    top: 95px; 
-    height: calc(100vh - 70px);
+    top: 0px;
     bottom: 0;
     overflow-y: auto;
     display: none;
